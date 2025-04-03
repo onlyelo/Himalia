@@ -1,0 +1,67 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Utility functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        request.auth.token.email == 'lukemury@gmail.com' ||
+        request.auth.token.email == 'yelo@himalia.com'
+      );
+    }
+    
+    function isImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isFileSizeUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // Rules for ships images
+    match /ships/{shipId} {
+      allow read: if true;
+      allow write: if isAdmin() &&
+        isImageType() &&
+        isFileSizeUnder5MB();
+    }
+
+    // Rules for visuals
+    match /visuals/{visualType}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Rules for tools
+    match /tools/{toolId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() &&
+        isImageType() &&
+        isFileSizeUnder5MB();
+      allow delete: if isAdmin();
+    }
+
+    // Rules for members
+    match /members/{memberId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() &&
+        isImageType() &&
+        isFileSizeUnder5MB();
+      allow delete: if isAdmin();
+    }
+
+    // Rules for articles
+    match /articles/{articleId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() &&
+        isImageType() &&
+        isFileSizeUnder5MB();
+      allow delete: if isAdmin();
+    }
+  }
+}
